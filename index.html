@@ -33,6 +33,7 @@
             border-collapse: collapse;
             width: 100%;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            table-layout: auto; /* Allow columns to adjust width automatically */
         }
 
         th {
@@ -49,6 +50,7 @@
             padding: 12px;
             border-bottom: 1px solid #e5e7eb; /* Light gray */
             text-align: left;
+            word-wrap: break-word; /* Break long words to fit within the cell */
         }
 
         tr:nth-child(even) {
@@ -81,6 +83,7 @@
                 white-space: nowrap;
             }
             th, td {
+                min-width: 120px; /* Ensure columns have a minimum width */
                 padding: 10px;
                 font-size: 14px;
             }
@@ -101,6 +104,31 @@
                 font-size: 20px;
             }
         }
+
+        /* Loading indicator styles */
+        #loading {
+            font-family: 'Arial', sans-serif; /* Custom font */
+            font-size: 1.5rem;
+            color: #1e40af; /* Dark blue */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        /* Sub-table styles */
+        .sub-table {
+            display: none;
+            background-color: #f1f5f9; /* Light gray */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .sub-table p {
+            margin: 0.25rem 0;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-8">
@@ -108,7 +136,11 @@
 <div class="container mx-auto">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Machine Inventory</h1>
 
-    <div class="overflow-x-auto bg-white rounded-lg shadow-lg">
+    <!-- Loading Indicator -->
+    <div id="loading" class="text-center text-blue-600 font-semibold">Loading data...</div>
+
+    <!-- Table Container -->
+    <div id="tableContainer" class="overflow-x-auto bg-white rounded-lg shadow-lg hidden">
         <table id="inventoryTable" class="min-w-full divide-y divide-gray-200">
             <thead class="bg-blue-600 text-white">
                 <tr>
@@ -137,17 +169,9 @@
                         Model <span class="sort-indicator" data-dir="none"></span>
                     </th>
                     <th class="sortable-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" data-column="Serial No.">
-                        Serial No. <span class="sort-indicator" data-dir="none"></span>
+                        รายละเอียด <span class="sort-indicator" data-dir="none"></span>
                     </th>
-                    <th class="sortable-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" data-column="Year">
-                        Year <span class="sort-indicator" data-dir="none"></span>
-                    </th>
-                    <th class="sortable-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" data-column="Rate capacity">
-                        Rate capacity <span class="sort-indicator" data-dir="none"></span>
-                    </th>
-                    <th class="sortable-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" data-column="Accuracy weight">
-                        Accuracy weight <span class="sort-indicator" data-dir="none"></span>
-                    </th>
+        
                 </tr>
             </thead>
             <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
@@ -157,165 +181,12 @@
 </div>
 
 <script>
-    const machineData = [
-        {
-            "Id": "1",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight scale",
-            "Specification": "Machine No.",
-            "Machine Name": "30W010A",
-            "Line": "A",
-            "Brand": "W&H",
-            "Model": "D-49525",
-            "Serial No.": "W-4908-00106",
-            "Year": "2008",
-            "Rate capacity": "45 Ton/hr.",
-            "Accuracy weight": "± 20 g."
-        },
-        {
-            "Id": "2",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight scale",
-            "Specification": "Machine No.",
-            "Machine Name": "30W010C",
-            "Line": "C",
-            "Brand": "new long",
-            "Model": "PS-4100H",
-            "Serial No.": "4841 , 4842",
-            "Year": "05/2009",
-            "Rate capacity": "30 Ton/hr.",
-            "Accuracy weight": "± 15 g."
-        },
-        {
-            "Id": "3",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight scale",
-            "Specification": "Machine No.",
-            "Machine Name": "30W050A",
-            "Line": "A",
-            "Brand": "Beumer",
-            "Model": "FS-20",
-            "Serial No.": "1071",
-            "Year": "02/2022",
-            "Rate capacity": "20 BAG/hr.",
-            "Accuracy weight": "± 15 g."
-        },
-        {
-            "Id": "4",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight scale",
-            "Specification": "Machine No.",
-            "Machine Name": "30W050B",
-            "Line": "B",
-            "Brand": "W&H",
-            "Model": "FS-20",
-            "Serial No.": "1072",
-            "Year": "02/2022",
-            "Rate capacity": "20 BAG/hr.",
-            "Accuracy weight": "± 15 g."
-        },
-        {
-            "Id": "5",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight scale",
-            "Specification": "Machine No.",
-            "Machine Name": "30W050C",
-            "Line": "C",
-            "Brand": "W&H",
-            "Model": "FS-20",
-            "Serial No.": "1073",
-            "Year": "02/2022",
-            "Rate capacity": "20 BAG/hr.",
-            "Accuracy weight": "± 15 g."
-        },
-        {
-            "Id": "6",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight on line",
-            "Specification": "Machine No.",
-            "Machine Name": "30W011A",
-            "Line": "A",
-            "Brand": "ISHIDA",
-            "Model": "DACS-G-S300-611/PE-N-S",
-            "Serial No.": "1.00E+08",
-            "Year": "08/2015",
-            "Rate capacity": "30,000 g.",
-            "Accuracy weight": "± 5 g."
-        },
-        {
-            "Id": "7",
-            "Bagging": "PP1&2",
-            "Part machine": "Weight on line",
-            "Specification": "Machine No.",
-            "Machine Name": "30W011C",
-            "Line": "C",
-            "Brand": "กำลังติดตั้ง",
-            "Model": "กำลังติดตั้ง",
-            "Serial No.": "กำลังติดตั้ง",
-            "Year": "กำลังติดตั้ง",
-            "Rate capacity": "กำลังติดตั้ง",
-            "Accuracy weight": "กำลังติดตั้ง"
-        },
-        {
-            "Id": "8",
-            "Bagging": "PP1&2",
-            "Part machine": "Bagging machine",
-            "Specification": "Machine No.",
-            "Machine Name": "30W010A",
-            "Line": "A",
-            "Brand": "TOPAS",
-            "Model": "D-49516",
-            "Serial No.": "7335",
-            "Year": "2008",
-            "Rate capacity": "45 Ton/hr.",
-            "Accuracy weight": "-"
-        },
-        {
-            "Id": "9",
-            "Bagging": "PP1&2",
-            "Part machine": "Bagging machine",
-            "Specification": "Machine No.",
-            "Machine Name": "30W010C",
-            "Line": "C",
-            "Brand": "ASVENTUS",
-            "Model": "Topas SF 2000",
-            "Serial No.": "E-000205-01-15-01",
-            "Year": "2023",
-            "Rate capacity": "30 Ton/hr.",
-            "Accuracy weight": "-"
-        },
-        {
-            "Id": "10",
-            "Bagging": "PP1&2",
-            "Part machine": "Palletizer machine",
-            "Specification": "Machine No.",
-            "Machine Name": "30H010C",
-            "Line": "C",
-            "Brand": "BEUMER",
-            "Model": "Paletpac® KBQ1800",
-            "Serial No.": "608-0271",
-            "Year": "2008",
-            "Rate capacity": "-",
-            "Accuracy weight": "805015"
-        },
-        {
-            "Id": "11",
-            "Bagging": "PP1&2",
-            "Part machine": "Palletizer machine",
-            "Specification": "Machine No.",
-            "Machine Name": "30H010C",
-            "Line": "C",
-            "Brand": "NEWLONG",
-            "Model": "กำลังติดตั้ง",
-            "Serial No.": "กำลังติดตั้ง",
-            "Year": "กำลังติดตั้ง",
-            "Rate capacity": "กำลังติดตั้ง",
-            "Accuracy weight": "กำลังติดตั้ง"
-        }
-    ];
+    const url = 'https://script.google.com/macros/s/AKfycbyFfbLxRZOL_882MPE2Kxud6bkFalCGIYzKfXO8fQ3RAx3Nf7hYut_P77dbKJABR4zf/exec';
 
     const tableBody = document.getElementById('tableBody');
     const headers = document.querySelectorAll('.sortable-header');
+    const loadingIndicator = document.getElementById('loading');
+    const tableContainer = document.getElementById('tableContainer');
 
     // Function to populate the table
     function populateTable(data) {
@@ -332,107 +203,61 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.Line}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.Brand}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.Model}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['Serial No.']}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.Year}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['Rate capacity']}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item['Accuracy weight']}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button class="text-blue-500 hover:underline" onclick="toggleSubTable(this)">Details</button>
+                </td>
             `;
+
+            const subTableRow = document.createElement('tr');
+            subTableRow.classList.add('hidden', 'sub-table-row');
+            subTableRow.innerHTML = `
+                <td colspan="8" class="bg-gray-100 p-4">
+                    <div>
+                        <p><strong>Serial No.:</strong> ${item['Serial No.']}</p>
+                        <p><strong>Year:</strong> ${item.Year}</p>
+                        <p><strong>Rate capacity:</strong> ${item['Rate capacity']}</p>
+                        <p><strong>Accuracy weight:</strong> ${item['Accuracy weight']}</p>
+                    </div>
+                </td>
+            `;
+
             tableBody.appendChild(row);
+            tableBody.appendChild(subTableRow);
         });
     }
 
-    // Initial table population
-    populateTable(machineData);
-
-    let currentSortColumn = null;
-    let currentSortDirection = 'none';
-
-    // Sort function
-    function sortTable(column, direction) {
-        const isNumeric = ['Id', 'Year'].includes(column) || column.includes('Rate capacity') || column.includes('Accuracy weight');
-
-        machineData.sort((a, b) => {
-            const aValue = a[column];
-            const bValue = b[column];
-
-            if (aValue === 'กำลังติดตั้ง' || bValue === 'กำลังติดตั้ง' || aValue === '-' || bValue === '-') {
-                return aValue.localeCompare(bValue);
-            }
-
-            if (isNumeric) {
-                const parseNumeric = (str) => {
-                    const match = String(str).match(/[\d\.]+/);
-                    return match ? parseFloat(match[0]) : NaN;
-                };
-
-                const numA = parseNumeric(aValue);
-                const numB = parseNumeric(bValue);
-
-                if (isNaN(numA) && isNaN(numB)) return String(aValue).localeCompare(String(bValue));
-                if (isNaN(numA)) return direction === 'asc' ? 1 : -1;
-                if (isNaN(numB)) return direction === 'asc' ? -1 : 1;
-
-                return direction === 'asc' ? numA - numB : numB - numA;
-            } else {
-                const comparison = String(aValue).localeCompare(String(bValue));
-                return direction === 'asc' ? comparison : -comparison;
-            }
-        });
-
-        populateTable(machineData);
+    // Function to toggle sub-table visibility
+    function toggleSubTable(button) {
+        const row = button.closest('tr');
+        const subTableRow = row.nextElementSibling;
+        if (subTableRow.classList.contains('hidden')) {
+            subTableRow.classList.remove('hidden');
+        } else {
+            subTableRow.classList.add('hidden');
+        }
     }
 
-    // Event listeners for headers
-    headers.forEach(header => {
-        header.addEventListener('click', function() {
-            const column = this.getAttribute('data-column');
-            let direction = this.querySelector('.sort-indicator').getAttribute('data-dir');
-
-            if (currentSortColumn !== column) {
-                direction = 'asc';
-            } else {
-                direction = direction === 'asc' ? 'desc' : (direction === 'desc' ? 'none' : 'asc');
+    // Fetch data from the URL
+    async function fetchData() {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const data = await response.json();
+            populateTable(data);
 
-            headers.forEach(h => {
-                const indicator = h.querySelector('.sort-indicator');
-                indicator.classList.remove('sort-asc', 'sort-desc');
-                indicator.setAttribute('data-dir', 'none');
-            });
+            // Hide loading indicator and show table
+            loadingIndicator.style.display = 'none';
+            tableContainer.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            loadingIndicator.textContent = 'Failed to load data. Please try again later.';
+        }
+    }
 
-            const indicator = this.querySelector('.sort-indicator');
-            indicator.setAttribute('data-dir', direction);
-
-            if (direction === 'asc') {
-                indicator.classList.add('sort-asc');
-            } else if (direction === 'desc') {
-                indicator.classList.add('sort-desc');
-            }
-
-            currentSortColumn = column;
-            currentSortDirection = direction;
-
-            if (direction !== 'none') {
-                sortTable(column, direction);
-            } else {
-                machineData.sort((a, b) => parseInt(a.Id) - parseInt(b.Id));
-                populateTable(machineData);
-            }
-        });
-    });
-
-    // Add touch event listener for iPad and other touch devices
-    const rows = document.querySelectorAll('#inventoryTable tbody tr');
-
-    rows.forEach(row => {
-        row.addEventListener('touchstart', () => {
-            // Remove highlight from all rows
-            rows.forEach(r => r.classList.remove('bg-green-200'));
-
-            // Add highlight to the touched row
-            row.classList.add('bg-green-200');
-        });
-    });
+    // Initial fetch and table population
+    fetchData();
 </script>
 
 </body>
